@@ -8,6 +8,7 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 const PORT = 5000;
+
 //Mongo Connection
 
 mongoose
@@ -34,6 +35,24 @@ const userSchema = new mongoose.Schema(
 );
 
 const User = mongoose.model("User", userSchema);
+
+// Job Apply data
+const jobApplicationSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    jobId: { type: String, required: true },
+    resume: { type: String, required: true },
+    coverLetter: { type: String },
+    appliedAt: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
+);
+
+const JobApplication = mongoose.model("JobApplication", jobApplicationSchema);
 
 // Sign Up API
 app.post("/api/signup", async (req, res) => {
@@ -89,6 +108,40 @@ app.post("/api/login", async (req, res) => {
     res
       .status(500)
       .json({ error: "Error during authentication", details: err.message });
+  }
+});
+
+app.post("/api/apply", async (req, res) => {
+  const { userId, jobId, resume, coverLetter } = req.body;
+
+  // Validate required fields
+  if (!userId || !jobId || !resume) {
+    return res
+      .status(400)
+      .json({ error: "User ID, Job ID, and Resume are required" });
+  }
+
+  try {
+    const newApplication = new JobApplication({
+      userId,
+      jobId,
+      resume,
+      coverLetter,
+    });
+    await newApplication.save();
+    res
+      .status(201)
+      .json({
+        message: "Job application submitted successfully",
+        application: newApplication,
+      });
+  } catch (err) {
+    res
+      .status(500)
+      .json({
+        error: "Error saving job application to database",
+        details: err.message,
+      });
   }
 });
 
