@@ -54,6 +54,19 @@ const jobApplicationSchema = new mongoose.Schema(
 
 const JobApplication = mongoose.model("JobApplication", jobApplicationSchema);
 
+// Job Data
+
+const Job = new new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    location: { type: String, required: true },
+    category: { type: String, required: true },
+    description: { type: String, required: true },
+    postedAt: { type: Date, defualt: Date.now },
+  },
+  { timestamps: true }
+)();
+
 // Sign Up API
 app.post("/api/signup", async (req, res) => {
   const { fullName, userName, emailAddress, password, confirmPassword } =
@@ -111,6 +124,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// JOB Apply API
 app.post("/api/apply", async (req, res) => {
   const { userId, jobId, resume, coverLetter } = req.body;
 
@@ -129,19 +143,38 @@ app.post("/api/apply", async (req, res) => {
       coverLetter,
     });
     await newApplication.save();
-    res
-      .status(201)
-      .json({
-        message: "Job application submitted successfully",
-        application: newApplication,
-      });
+    res.status(201).json({
+      message: "Job application submitted successfully",
+      application: newApplication,
+    });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        error: "Error saving job application to database",
-        details: err.message,
-      });
+    res.status(500).json({
+      error: "Error saving job application to database",
+      details: err.message,
+    });
+  }
+});
+
+// FIND JOB  API
+
+app.get("/findJob/:Designation", async (req, res) => {
+  const { Designation, Locaiton, Category } = req.body;
+  if (!Designation || !Location || !Category) {
+    return res
+      .status(400)
+      .json({ error: "User ID, Job ID, and Resume are required" });
+  }
+
+  try {
+    const jobs = await Job.find({
+      title: Designation,
+      location: Locaiton,
+      category: Category,
+    });
+
+    res.status(200).json({ message: "Jobs Found", jobs });
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching jobs from databse" });
   }
 });
 
